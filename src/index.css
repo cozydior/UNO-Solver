@@ -422,7 +422,7 @@ button[aria-pressed='true'] {
 .board {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  grid-template-rows: minmax(0, 1fr) minmax(0, 1.12fr);
+  grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
   grid-template-areas:
     ". across ."
     "left specials right";
@@ -430,6 +430,14 @@ button[aria-pressed='true'] {
   min-height: 0;
   height: 100%;
   align-items: stretch;
+  justify-items: stretch;
+}
+
+.pos-across,
+.pos-left,
+.pos-right {
+  min-height: 0;
+  height: 100%;
 }
 
 .pos-across { grid-area: across; }
@@ -440,12 +448,17 @@ button[aria-pressed='true'] {
   grid-area: specials;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
-  gap: 12px;
+  gap: 8px;
   min-height: 0;
-  padding: 16px;
+  width: 100%;
+  height: 78%;
+  max-height: 78%;
+  padding: 12px;
   border-radius: 22px;
   background: rgba(22, 23, 18, 0.92);
   border: 1px solid rgba(255, 255, 255, 0.06);
+  align-self: center;
+  justify-self: stretch;
 }
 
 .board-specials .kicker { margin: 0; }
@@ -591,8 +604,10 @@ button[aria-pressed='true'] {
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
   gap: 12px;
-  min-height: 0;
+  box-sizing: border-box;
+  width: 100%;
   height: 100%;
+  min-height: 0;
   padding: 14px;
   border-radius: 22px;
   background: rgba(22, 23, 18, 0.92);
@@ -776,7 +791,7 @@ button[aria-pressed='true'] {
 
   .board {
     grid-template-columns: 1fr 1fr;
-    grid-template-rows: minmax(0, 0.95fr) minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 0.72fr);
     grid-template-areas:
       "across across"
       "left right"
@@ -784,7 +799,12 @@ button[aria-pressed='true'] {
     gap: 10px;
   }
 
-  .board-specials { padding: 12px; }
+  .board-specials {
+    height: 100%;
+    max-height: 100%;
+    padding: 12px;
+  }
+
   .special-hit { gap: 10px; }
   .special-face { width: 48px; height: 72px; }
   .special-count { font-size: 1.8rem; }
