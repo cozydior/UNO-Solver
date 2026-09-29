@@ -719,33 +719,57 @@ button[aria-pressed='true'] {
 }
 
 .void-chip.is-has {
-  background: rgba(154, 223, 122, 0.08);
-  border-color: rgba(154, 223, 122, 0.28);
+  background: rgba(226, 75, 75, 0.14);
+  border-color: rgba(226, 75, 75, 0.45);
+  color: #f3efe6;
+}
+
+.void-chip.is-has[aria-pressed='true'],
+.void-chip.is-out[aria-pressed='true'] {
+  background: inherit;
+  color: #f3efe6;
+  border-color: inherit;
+}
+
+.void-chip.is-has[aria-pressed='true'] {
+  background: rgba(226, 75, 75, 0.14);
+  border-color: rgba(226, 75, 75, 0.45);
+}
+
+.void-chip.is-out[aria-pressed='true'] {
+  background: rgba(154, 223, 122, 0.14);
+  border-color: rgba(154, 223, 122, 0.45);
+}
+
+.void-chip.is-has .void-name {
+  color: #f3efe6;
 }
 
 .void-chip.is-has .void-state.has {
-  color: #9adf7a;
-  background: rgba(154, 223, 122, 0.14);
+  color: #f3efe6;
+  background: rgba(226, 75, 75, 0.28);
 }
 
 .void-chip.is-out {
-  background: rgba(18, 18, 16, 0.9);
-  border-color: rgba(255, 255, 255, 0.06);
+  background: rgba(154, 223, 122, 0.14);
+  border-color: rgba(154, 223, 122, 0.45);
+  color: #f3efe6;
 }
 
 .void-chip.is-out .void-name {
-  text-decoration: line-through;
-  opacity: 0.7;
+  text-decoration: none;
+  opacity: 1;
+  color: #f3efe6;
 }
 
 .void-chip.is-out .void-state.out {
-  color: #e7c27a;
-  background: rgba(231, 194, 122, 0.12);
+  color: #f3efe6;
+  background: rgba(154, 223, 122, 0.28);
 }
 
 .void-chip.is-out .void-swatch {
-  filter: grayscale(0.45);
-  opacity: 0.55;
+  filter: none;
+  opacity: 1;
 }
 
 .void-swatch[data-color='red'] { background: #e24b4b; }
