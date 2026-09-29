@@ -58,7 +58,7 @@ export function GameScreen({
         <button type="button" onClick={onBack}>
           Home
         </button>
-        <div>
+        <div className="topbar-mid">
           <p className="kicker">Live track{roomLabel ? ` · ${roomLabel}` : ''}</p>
           <p className="quiet">
             {formatCoins(coins)} coins
@@ -70,7 +70,7 @@ export function GameScreen({
         </button>
       </header>
 
-      <section className="felt" aria-label="Table">
+      <section className="board" aria-label="Table">
         <SeatPad
           seat={2}
           place="across"
@@ -85,9 +85,9 @@ export function GameScreen({
           onToggle={(color) => toggle(1, color)}
           onClear={() => clearSeat(1)}
         />
-        <div className="felt-center" aria-label="Wild and +4 counters">
+        <div className="board-specials" aria-label="Wild and +4 counters">
           <p className="kicker">Specials left</p>
-          <div className="felt-specials">
+          <div className="specials-row">
             <WildCounter
               kind="wild"
               left={wildLeft}
@@ -184,7 +184,7 @@ function WildCounter({
 }) {
   const label = kind === 'wild' ? 'Wild' : '+4';
   return (
-    <div className={`special-track ${kind} ${left === 0 ? 'is-empty' : ''}`}>
+    <div className={`special-card ${kind} ${left === 0 ? 'is-empty' : ''}`}>
       <button
         type="button"
         className="special-hit"
@@ -193,15 +193,17 @@ function WildCounter({
         aria-label={`${label} played, ${left} left`}
       >
         <SpecialFace kind={kind} />
-        <span className="special-count">{left}</span>
-        <span className="special-label">{label}</span>
-        <span className="special-hint">{left === 0 ? 'Gone' : 'Tap played'}</span>
+        <div className="special-meta">
+          <span className="special-count">{left}</span>
+          <span className="special-label">{label}</span>
+          <span className="special-hint">{left === 0 ? 'None left' : 'Tap when played'}</span>
+          <div className="special-pips" aria-hidden="true">
+            {Array.from({ length: total }, (_, index) => (
+              <span key={index} className={`special-pip ${index < left ? 'is-left' : 'is-gone'}`} />
+            ))}
+          </div>
+        </div>
       </button>
-      <div className="special-pips" aria-hidden="true">
-        {Array.from({ length: total }, (_, index) => (
-          <span key={index} className={`special-pip ${index < left ? 'is-left' : 'is-gone'}`} />
-        ))}
-      </div>
       <button type="button" className="special-undo" disabled={left >= total} onClick={onUndo}>
         Undo
       </button>
@@ -214,22 +216,13 @@ function SpecialFace({ kind }: { kind: 'wild' | 'plus4' }) {
     return (
       <span className="special-face plus4" aria-hidden="true">
         <svg viewBox="0 0 64 96" className="special-svg">
-          <defs>
-            <linearGradient id="plus4Shine" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stopColor="#2a2a2a" />
-              <stop offset="100%" stopColor="#0d0d0d" />
-            </linearGradient>
-          </defs>
-          <rect x="2" y="2" width="60" height="92" rx="9" fill="url(#plus4Shine)" stroke="#f3efe6" strokeWidth="2.2" />
-          <rect x="8" y="10" width="48" height="54" rx="6" fill="#101010" stroke="rgba(243,239,230,0.2)" strokeWidth="1" />
-          <g transform="translate(32 37)">
-            <rect x="-13" y="-16" width="12" height="18" rx="2" fill="#e24b4b" transform="rotate(-18)" />
-            <rect x="1" y="-18" width="12" height="18" rx="2" fill="#e2b325" transform="rotate(8)" />
-            <rect x="-10" y="-2" width="12" height="18" rx="2" fill="#2f6fe0" transform="rotate(-6)" />
-            <rect x="4" y="0" width="12" height="18" rx="2" fill="#1f8a4c" transform="rotate(16)" />
-          </g>
-          <circle cx="32" cy="74" r="12" fill="#f3efe6" />
-          <text x="32" y="79" textAnchor="middle" fill="#12130f" fontSize="13" fontWeight="800" fontFamily="Segoe UI,system-ui,sans-serif">
+          <rect x="2" y="2" width="60" height="92" rx="10" fill="#121212" stroke="#f3efe6" strokeWidth="2" />
+          <circle cx="32" cy="38" r="16" fill="#1a1a1a" />
+          <path d="M32 22 A16 16 0 0 1 48 38 L32 38 Z" fill="#e24b4b" />
+          <path d="M48 38 A16 16 0 0 1 32 54 L32 38 Z" fill="#e2b325" />
+          <path d="M32 54 A16 16 0 0 1 16 38 L32 38 Z" fill="#1f8a4c" />
+          <path d="M16 38 A16 16 0 0 1 32 22 L32 38 Z" fill="#2f6fe0" />
+          <text x="32" y="76" textAnchor="middle" fill="#f3efe6" fontSize="18" fontWeight="800" fontFamily="Segoe UI,system-ui,sans-serif">
             +4
           </text>
         </svg>
@@ -240,14 +233,14 @@ function SpecialFace({ kind }: { kind: 'wild' | 'plus4' }) {
   return (
     <span className="special-face wild" aria-hidden="true">
       <svg viewBox="0 0 64 96" className="special-svg">
-        <rect x="2" y="2" width="60" height="92" rx="9" fill="#141414" stroke="#f3efe6" strokeWidth="2.2" />
-        <circle cx="32" cy="42" r="18" fill="#1a1a1a" />
-        <path d="M32 24 A18 18 0 0 1 50 42 L32 42 Z" fill="#e24b4b" />
-        <path d="M50 42 A18 18 0 0 1 32 60 L32 42 Z" fill="#e2b325" />
-        <path d="M32 60 A18 18 0 0 1 14 42 L32 42 Z" fill="#1f8a4c" />
-        <path d="M14 42 A18 18 0 0 1 32 24 L32 42 Z" fill="#2f6fe0" />
-        <circle cx="32" cy="42" r="5" fill="#f3efe6" />
-        <text x="32" y="78" textAnchor="middle" fill="#f3efe6" fontSize="11" fontWeight="800" fontFamily="Segoe UI,system-ui,sans-serif" letterSpacing="1">
+        <rect x="2" y="2" width="60" height="92" rx="10" fill="#121212" stroke="#f3efe6" strokeWidth="2" />
+        <circle cx="32" cy="40" r="17" fill="#1a1a1a" />
+        <path d="M32 23 A17 17 0 0 1 49 40 L32 40 Z" fill="#e24b4b" />
+        <path d="M49 40 A17 17 0 0 1 32 57 L32 40 Z" fill="#e2b325" />
+        <path d="M32 57 A17 17 0 0 1 15 40 L32 40 Z" fill="#1f8a4c" />
+        <path d="M15 40 A17 17 0 0 1 32 23 L32 40 Z" fill="#2f6fe0" />
+        <circle cx="32" cy="40" r="4.5" fill="#f3efe6" />
+        <text x="32" y="78" textAnchor="middle" fill="#f3efe6" fontSize="11" fontWeight="800" fontFamily="Segoe UI,system-ui,sans-serif" letterSpacing="1.2">
           WILD
         </text>
       </svg>
@@ -268,19 +261,20 @@ function SeatPad({
   onToggle: (color: Color) => void;
   onClear: () => void;
 }) {
+  const outCount = missing.length;
   return (
-    <article className={`seat-pad pos-${place} ${missing.length > 0 ? 'has-voids' : ''}`}>
+    <article className={`seat-pad pos-${place} ${outCount > 0 ? 'has-voids' : ''}`}>
       <div className="seat-pad-head">
         <span className="seat-avatar" aria-hidden="true">
           {SEAT_NAMES[seat].slice(0, 1)}
         </span>
-        <div>
+        <div className="seat-pad-copy">
           <p className="kicker">{SEAT_NAMES[seat]}</p>
           <p className="void-summary">
-            {missing.length === 0 ? 'All colors possible' : `Out: ${missing.map((color) => colorName(color)).join(', ')}`}
+            {outCount === 0 ? 'All colors in' : `${outCount} out`}
           </p>
         </div>
-        <button type="button" onClick={onClear} disabled={missing.length === 0}>
+        <button type="button" className="seat-clear" onClick={onClear} disabled={outCount === 0}>
           Clear
         </button>
       </div>
@@ -296,7 +290,7 @@ function SeatPad({
               aria-pressed={out}
               onClick={() => onToggle(color)}
             >
-              <span className="void-dot" data-color={color} />
+              <span className="void-swatch" data-color={color} aria-hidden="true" />
               <span className="void-name">{colorName(color)}</span>
               <span className={`void-state ${out ? 'out' : 'has'}`}>{out ? 'Out' : 'Has'}</span>
             </button>
