@@ -35,6 +35,7 @@ export function loadHistory(): CoinResult[] {
       multi: typeof item.multi === 'number' ? item.multi : undefined,
       fee: typeof item.fee === 'number' ? item.fee : undefined,
       match: typeof item.match === 'number' ? item.match : undefined,
+      ev: typeof item.ev === 'number' ? item.ev : undefined,
       note: typeof item.note === 'string' ? item.note : undefined,
     }))
     .filter((item) => Number.isFinite(item.delta) && Number.isFinite(item.balance));
@@ -75,6 +76,7 @@ export function loadSessions(): SavedSession[] {
       games: Number(item.games) || 0,
       wins: Number(item.wins) || 0,
       net: Number(item.net) || 0,
+      ev: Number.isFinite(Number(item.ev)) ? Number(item.ev) : 0,
     }))
     .filter((item) => item.startedAt > 0 && item.endedAt > 0)
     .sort((a, b) => a.endedAt - b.endedAt);

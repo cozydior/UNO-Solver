@@ -8,7 +8,7 @@ import {
   Session,
   archiveSession,
   applyMatchFee,
-  stopLines,
+  pointsFromMatch,
 } from './money';
 import {
   clearAllStorage,
@@ -107,14 +107,6 @@ export default function App() {
     return closed;
   }
 
-  function limitHit(active: Session, nextCoins: number): AutoCloseNotice | null {
-    const lines = stopLines(active.startCoins, active.multi);
-    const net = nextCoins - active.startCoins;
-    if (net >= lines.stopWin) return { reason: 'take-profit', net, multi: active.multi };
-    if (net <= -lines.stopLoss) return { reason: 'stop-loss', net, multi: active.multi };
-    return null;
-  }
-
   function finish(matchResult: number) {
     if (!session) {
       setScreen('home');
@@ -123,25 +115,26 @@ export default function App() {
     const active = session;
     const fee = active.fee;
     const delta = applyMatchFee(matchResult, fee);
+    const ev = pointsFromMatch(matchResult, active.multi);
     const nextCoins = coins + delta;
     const at = Date.now();
     const nextHistory = [
       ...history,
-      { delta, balance: nextCoins, at, multi: active.multi, fee, match: Math.round(matchResult) },
+      {
+        delta,
+        balance: nextCoins,
+        at,
+        multi: active.multi,
+        fee,
+        match: Math.round(matchResult),
+        ev,
+      },
     ];
     setHistory(nextHistory);
     setCoins(nextCoins);
     setLastDelta(delta);
-    setScreen('home');
-
-    const hit = limitHit(active, nextCoins);
-    if (hit) {
-      archiveActive(active, nextCoins, nextHistory, at);
-      setSession(null);
-      setAutoClose(hit);
-      return;
-    }
     setAutoClose(null);
+    setScreen('home');
   }
 
   if (!ready) {
@@ -212,11 +205,8 @@ export default function App() {
         <GameScreen
           coins={coins}
           fee={session?.fee ?? 0}
-          roomLabel={
-            session
-              ? `${session.gold.toLocaleString('en-US')} · ${session.multi}×`
-              : ''
-          }
+          multi={session?.multi ?? 2}
+          roomLabel={session ? `${session.multi}×` : ''}
           onBack={() => setScreen('home')}
           onFinish={finish}
         />

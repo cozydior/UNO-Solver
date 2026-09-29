@@ -1,22 +1,24 @@
 import { useState } from 'react';
-import { COLORS, Color, SEAT_NAMES, applyMatchFee, colorName, formatCoins } from '../money';
+import { COLORS, Color, SEAT_NAMES, applyMatchFee, colorName, formatCoins, formatEv, pointsFromMatch } from '../money';
 
 type OppSeat = 1 | 2 | 3;
 type Voids = Record<OppSeat, Color[]>;
 
 const emptyVoids = (): Voids => ({ 1: [], 2: [], 3: [] });
-const WILD_START = 4;
-const PLUS4_START = 4;
+const WILD_START = 8;
+const PLUS4_START = 8;
 
 export function GameScreen({
   coins,
   fee,
+  multi,
   roomLabel,
   onBack,
   onFinish,
 }: {
   coins: number;
   fee: number;
+  multi: number;
   roomLabel: string;
   onBack: () => void;
   onFinish: (matchResult: number) => void;
@@ -51,6 +53,7 @@ export function GameScreen({
   const ready = delta.trim() !== '' && Number.isFinite(parsed);
   const matchResult = ready ? Math.round(parsed) : 0;
   const net = ready ? applyMatchFee(matchResult, fee) : 0;
+  const ev = ready ? pointsFromMatch(matchResult, multi) : 0;
 
   return (
     <div className="game">
@@ -122,30 +125,32 @@ export function GameScreen({
           <section className="panel end-sheet">
             <p className="kicker">Match coins won or lost</p>
             <p className="quiet">
-              Enter the match result before the entry fee. Entry fee −{formatCoins(fee)} is always deducted.
+              Enter the match payout before the entry fee. We reverse {roomLabel || `${multi}×`} into card-point EV.
+              Entry −{formatCoins(fee)} is always deducted from bankroll.
             </p>
             <input
               className="delta"
               inputMode="decimal"
               enterKeyHint="done"
               aria-label="Match coins won or lost"
-              placeholder="400 or -200"
+              placeholder="1296 or -960"
               value={delta}
               onChange={(event) => setDelta(event.target.value)}
               autoFocus
             />
             {ready ? (
               <div className="fee-preview">
+                <p className={ev >= 0 ? 'good-text' : 'warn'}>{formatEv(ev)}</p>
                 <p className="quiet">
                   Match {matchResult >= 0 ? '+' : ''}
-                  {formatCoins(matchResult)} − fee {formatCoins(fee)} ={' '}
+                  {formatCoins(matchResult)} ÷ {multi}× · bankroll after fee{' '}
                   <span className={net >= 0 ? 'good-text' : 'warn'}>
                     {net >= 0 ? '+' : ''}
                     {formatCoins(net)}
                   </span>
                 </p>
                 <p className={net >= 0 ? 'good-text' : 'warn'}>
-                  Bankroll becomes {formatCoins(coins + net)}
+                  Balance becomes {formatCoins(coins + net)}
                 </p>
               </div>
             ) : null}
