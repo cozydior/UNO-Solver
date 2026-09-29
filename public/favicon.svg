@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Go Wild">
+  <rect width="64" height="64" rx="14" fill="#101010"/>
+  <circle cx="32" cy="28" r="16" fill="#1a1a1a"/>
+  <path d="M32 12 A16 16 0 0 1 48 28 L32 28 Z" fill="#e24b4b"/>
+  <path d="M48 28 A16 16 0 0 1 32 44 L32 28 Z" fill="#e2b325"/>
+  <path d="M32 44 A16 16 0 0 1 16 28 L32 28 Z" fill="#1f8a4c"/>
+  <path d="M16 28 A16 16 0 0 1 32 12 L32 28 Z" fill="#2f6fe0"/>
+  <circle cx="32" cy="28" r="4.5" fill="#f3efe6"/>
+  <text x="32" y="56" text-anchor="middle" fill="#f3efe6" font-family="Segoe UI,Arial,sans-serif" font-size="10" font-weight="800" letter-spacing="1.5">WILD</text>
+</svg>

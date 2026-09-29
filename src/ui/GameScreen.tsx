@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { COLORS, Color, SEAT_NAMES, applyMatchFee, colorName, formatCoins } from '../money';
 
 type OppSeat = 1 | 2 | 3;
@@ -7,9 +7,6 @@ type Voids = Record<OppSeat, Color[]>;
 const emptyVoids = (): Voids => ({ 1: [], 2: [], 3: [] });
 const WILD_START = 4;
 const PLUS4_START = 4;
-
-/** Left is next clockwise from you, so their voids weigh most. */
-const SEAT_WEIGHT: Record<OppSeat, number> = { 1: 3, 2: 2, 3: 1 };
 
 export function GameScreen({
   coins,
@@ -29,7 +26,6 @@ export function GameScreen({
   const [plus4Left, setPlus4Left] = useState(PLUS4_START);
   const [ending, setEnding] = useState(false);
   const [delta, setDelta] = useState('');
-  const advice = useMemo(() => recommendPlayColor(voids), [voids]);
 
   function resetTrack() {
     setVoids(emptyVoids());
@@ -75,57 +71,43 @@ export function GameScreen({
       </header>
 
       <section className="felt" aria-label="Table">
-        <WildCounter
-          kind="wild"
-          place="wild"
-          left={wildLeft}
-          total={WILD_START}
-          onPlayed={() => setWildLeft((n) => Math.max(0, n - 1))}
-          onUndo={() => setWildLeft((n) => Math.min(WILD_START, n + 1))}
-        />
         <SeatPad
           seat={2}
           place="across"
           missing={voids[2]}
-          playColor={advice.color}
           onToggle={(color) => toggle(2, color)}
           onClear={() => clearSeat(2)}
-        />
-        <WildCounter
-          kind="plus4"
-          place="plus4"
-          left={plus4Left}
-          total={PLUS4_START}
-          onPlayed={() => setPlus4Left((n) => Math.max(0, n - 1))}
-          onUndo={() => setPlus4Left((n) => Math.min(PLUS4_START, n + 1))}
         />
         <SeatPad
           seat={1}
           place="left"
           missing={voids[1]}
-          playColor={advice.color}
           onToggle={(color) => toggle(1, color)}
           onClear={() => clearSeat(1)}
         />
-        <div className={`felt-center ${advice.color ? 'has-call' : ''}`} data-color={advice.color ?? undefined}>
-          <p className="kicker">Play this color</p>
-          <p className="play-now">{advice.color ? colorName(advice.color) : '—'}</p>
-          <p className="play-reason">{advice.reason}</p>
-          <div className="play-colors" aria-hidden="true">
-            {COLORS.map((color) => (
-              <span
-                key={color}
-                className={`play-swatch ${advice.color === color ? 'is-on' : ''}`}
-                data-color={color}
-              />
-            ))}
+        <div className="felt-center" aria-label="Wild and +4 counters">
+          <p className="kicker">Specials left</p>
+          <div className="felt-specials">
+            <WildCounter
+              kind="wild"
+              left={wildLeft}
+              total={WILD_START}
+              onPlayed={() => setWildLeft((n) => Math.max(0, n - 1))}
+              onUndo={() => setWildLeft((n) => Math.min(WILD_START, n + 1))}
+            />
+            <WildCounter
+              kind="plus4"
+              left={plus4Left}
+              total={PLUS4_START}
+              onPlayed={() => setPlus4Left((n) => Math.max(0, n - 1))}
+              onUndo={() => setPlus4Left((n) => Math.min(PLUS4_START, n + 1))}
+            />
           </div>
         </div>
         <SeatPad
           seat={3}
           place="right"
           missing={voids[3]}
-          playColor={advice.color}
           onToggle={(color) => toggle(3, color)}
           onClear={() => clearSeat(3)}
         />
@@ -144,7 +126,8 @@ export function GameScreen({
             </p>
             <input
               className="delta"
-              inputMode="text"
+              inputMode="decimal"
+              enterKeyHint="done"
               aria-label="Match coins won or lost"
               placeholder="400 or -200"
               value={delta}
@@ -188,14 +171,12 @@ export function GameScreen({
 
 function WildCounter({
   kind,
-  place,
   left,
   total,
   onPlayed,
   onUndo,
 }: {
   kind: 'wild' | 'plus4';
-  place: 'wild' | 'plus4';
   left: number;
   total: number;
   onPlayed: () => void;
@@ -203,7 +184,7 @@ function WildCounter({
 }) {
   const label = kind === 'wild' ? 'Wild' : '+4';
   return (
-    <div className={`special-track pos-${place} ${kind} ${left === 0 ? 'is-empty' : ''}`}>
+    <div className={`special-track ${kind} ${left === 0 ? 'is-empty' : ''}`}>
       <button
         type="button"
         className="special-hit"
@@ -274,46 +255,16 @@ function SpecialFace({ kind }: { kind: 'wild' | 'plus4' }) {
   );
 }
 
-function recommendPlayColor(voids: Voids): { color: Color | null; reason: string } {
-  const scores: Record<Color, number> = { red: 0, yellow: 0, green: 0, blue: 0 };
-  for (const seat of [1, 2, 3] as OppSeat[]) {
-    for (const color of voids[seat]) scores[color] += SEAT_WEIGHT[seat];
-  }
-
-  const ranked = COLORS.map((color) => ({ color, score: scores[color] })).sort(
-    (a, b) => b.score - a.score || COLORS.indexOf(a.color) - COLORS.indexOf(b.color),
-  );
-  const best = ranked[0];
-  if (!best || best.score === 0) {
-    return { color: null, reason: 'Mark who passed a color. Left weighs most.' };
-  }
-
-  const who = ([1, 2, 3] as OppSeat[])
-    .filter((seat) => voids[seat].includes(best.color))
-    .map((seat) => SEAT_NAMES[seat]);
-  const count = who.length;
-  const reason =
-    count === 3
-      ? `All three are out of ${colorName(best.color)}.`
-      : count === 1 && who[0] === 'Left'
-        ? `Left is out — strongest next-seat call.`
-        : `${who.join(' · ')} out of ${colorName(best.color)}.`;
-
-  return { color: best.color, reason };
-}
-
 function SeatPad({
   seat,
   place,
   missing,
-  playColor,
   onToggle,
   onClear,
 }: {
   seat: OppSeat;
   place: 'across' | 'left' | 'right';
   missing: Color[];
-  playColor: Color | null;
   onToggle: (color: Color) => void;
   onClear: () => void;
 }) {
@@ -336,12 +287,11 @@ function SeatPad({
       <div className="color-toggles" role="group" aria-label={`${SEAT_NAMES[seat]} colors`}>
         {COLORS.map((color) => {
           const out = missing.includes(color);
-          const live = playColor === color;
           return (
             <button
               key={color}
               type="button"
-              className={`void-chip ${out ? 'is-out' : 'is-has'} ${live ? 'is-live' : ''}`}
+              className={`void-chip ${out ? 'is-out' : 'is-has'}`}
               data-color={color}
               aria-pressed={out}
               onClick={() => onToggle(color)}

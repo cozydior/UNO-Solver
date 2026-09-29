@@ -11,8 +11,9 @@ import {
   saveSessions,
 } from './storage';
 
-const SYNC_ID_KEY = 'gowild-sync-id';
 const UPDATED_AT_KEY = 'gowild-updated-at';
+/** One shared cloud save for every browser / device. */
+const SHARED_SYNC_ID = 'main';
 
 export type TrackerSnapshot = {
   coins: number;
@@ -31,11 +32,8 @@ export function isSyncConfigured(): boolean {
 }
 
 export function getSyncId(): string {
-  const existing = localStorage.getItem(SYNC_ID_KEY);
-  if (existing) return existing;
-  const id = crypto.randomUUID();
-  localStorage.setItem(SYNC_ID_KEY, id);
-  return id;
+  const fromEnv = env('VITE_SYNC_ID');
+  return fromEnv || SHARED_SYNC_ID;
 }
 
 let client: SupabaseClient | null = null;
@@ -48,6 +46,35 @@ function getClient(): SupabaseClient | null {
     });
   }
   return client;
+}
+
+function isEmpty(snapshot: TrackerSnapshot): boolean {
+  return (
+    snapshot.coins === 0 &&
+    snapshot.history.length === 0 &&
+    snapshot.sessions.length === 0 &&
+    snapshot.session === null
+  );
+}
+
+function richness(snapshot: TrackerSnapshot): number {
+  return (
+    snapshot.history.length * 10 +
+    snapshot.sessions.length * 5 +
+    (snapshot.session ? 2 : 0) +
+    (snapshot.coins > 0 ? 1 : 0)
+  );
+}
+
+/** Pick the fuller save so Chrome local data wins over an empty cloud row. */
+function pickSharedSave(local: TrackerSnapshot, remote: TrackerSnapshot | null): TrackerSnapshot {
+  if (!remote || isEmpty(remote)) return local;
+  if (isEmpty(local)) return remote;
+  const localRich = richness(local);
+  const remoteRich = richness(remote);
+  if (localRich > remoteRich) return local;
+  if (remoteRich > localRich) return remote;
+  return remote.updatedAt >= local.updatedAt ? remote : local;
 }
 
 export function readLocalSnapshot(): TrackerSnapshot {
@@ -105,24 +132,25 @@ export async function pushRemoteSnapshot(snapshot: TrackerSnapshot): Promise<voi
   if (error) throw error;
 }
 
-/** Prefer remote when it exists and is newer or local is empty. */
+/**
+ * One shared cloud save: merge local Chrome data with remote `main`,
+ * keep the fuller copy, then write it to both localStorage and Supabase.
+ */
 export async function hydrateFromCloud(): Promise<TrackerSnapshot> {
   const local = readLocalSnapshot();
   if (!isSyncConfigured()) return local;
   try {
+    // Drop any old per-browser sync id so every device uses the shared row.
+    localStorage.removeItem('gowild-sync-id');
     const remote = await pullRemoteSnapshot();
-    if (!remote) {
-      await pushRemoteSnapshot(local);
-      return local;
-    }
-    const localEmpty =
-      local.coins === 0 && local.history.length === 0 && local.sessions.length === 0 && !local.session;
-    if (localEmpty || remote.updatedAt >= local.updatedAt - 2000) {
-      writeLocalSnapshot(remote);
-      return remote;
-    }
-    await pushRemoteSnapshot(local);
-    return local;
+    const winner = pickSharedSave(local, remote);
+    const stamped = {
+      ...winner,
+      updatedAt: Math.max(winner.updatedAt, Date.now()),
+    };
+    writeLocalSnapshot(stamped);
+    await pushRemoteSnapshot(stamped);
+    return stamped;
   } catch (error) {
     console.warn('Supabase sync pull failed', error);
     return local;
